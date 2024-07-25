@@ -19,25 +19,53 @@
 const fs = require('fs');
 const http = require('http');
 
+
+const replaceTemplate = (temp, product) => {
+    let output = temp.replace(/{%PRODUCTNAME%}/g, product.productName);
+    output = output.replace(/{%IMAGE%}/g, product.image);
+    output = output.replace(/{%PRICE%}/g, product.price);
+    output = output.replace(/{%FROM%}/g, product.from);
+    output = output.replace(/{%NUTRIENTS%}/g, product.nutrients);
+    output = output.replace(/{%QUANTITY%}/g, product.quantity);
+    output = output.replace(/{%DESCRIPTION%}/g, product.description);
+    output = output.replace(/{%ID%}/g, product.id);
+    if (!product.organic) output = output.replace(/{%NOT_ORGANIC%}/g, 'not-organic');
+
+    return output;
+
+}
+
+const overviewTemp = fs.readFileSync(`${__dirname}/templates/temp-overview.html`, 'utf-8');
+const cardTemp = fs.readFileSync(`${__dirname}/templates/temp-card.html`, 'utf-8');
+const productTemp = fs.readFileSync(`${__dirname}/templates/temp-product.html`, 'utf-8');
+
+let temp = overviewTemp.replace('')
+
 const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
 const productData = JSON.parse(data);
 
+
 const server = http.createServer((req, res) => {
     const pathName = req.url;
+    // Overview Page
     if (req.url === '/overview' || req.url === '/') {
-        res.end('<h1> Overview </h1>')
+        res.writeHead('200', { 'Content-type': 'text/html' });
+        const cardHtml = productData.map(element => replaceTemplate(cardTemp, element));
+        const overviewHtml = overviewTemp.replace(/{%PRODUCTCARD%}/g,cardHtml)
+        res.end(overviewHtml);
     }
+    // API Page
+
     else if (req.url === '/api') {
-        fs.readFile(`${__dirname}/dev-data/data.json`, 'utf-8', (err, data) => {
-            res.writeHead('200', { 'Content-type': 'application/json' });
-            res.end(data);
-
-        });
-
+        res.end(data);
     }
+    // Product Page
+
     else if (req.url === '/product') {
         res.end('<h1> Product </h1>')
     }
+    // Not Found Page
+
     else {
         res.end('<h1> Page Not Found </h1>')
     }
