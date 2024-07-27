@@ -18,6 +18,7 @@
 
 const fs = require('fs');
 const http = require('http');
+const url = require('url');
 
 
 const replaceTemplate = (temp, product) => {
@@ -46,9 +47,9 @@ const productData = JSON.parse(data);
 
 
 const server = http.createServer((req, res) => {
-    const pathName = req.url;
+    const {query, pathname} = url.parse(req.url,true);
     // Overview Page
-    if (req.url === '/overview' || req.url === '/') {
+    if (pathname === '/overview' || pathname === '/') {
         res.writeHead('200', { 'Content-type': 'text/html' });
         const cardHtml = productData.map(element => replaceTemplate(cardTemp, element));
         const overviewHtml = overviewTemp.replace(/{%PRODUCTCARD%}/g,cardHtml)
@@ -56,13 +57,17 @@ const server = http.createServer((req, res) => {
     }
     // API Page
 
-    else if (req.url === '/api') {
+    else if (pathname === '/api') {
         res.end(data);
     }
     // Product Page
 
-    else if (req.url === '/product') {
-        res.end('<h1> Product </h1>')
+    else if (pathname === '/product') {
+        res.writeHead('200', { 'Content-type': 'text/html' });
+        const product = productData[query.id];
+        const output = replaceTemplate(productTemp,product);
+
+        res.end(output);
     }
     // Not Found Page
 
